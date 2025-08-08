@@ -5,7 +5,7 @@ import plotly.express as px
 st.set_page_config(page_title="Microfinance Loan Dashboard", layout="wide")
 st.title("📊 Microfinance Loan Analysis Dashboard")
 
-# File uploading section
+# File upload
 uploaded_file = st.file_uploader("📤 Upload your Excel file", type=["xlsx"])
 
 if uploaded_file is not None:
@@ -25,7 +25,17 @@ if uploaded_file is not None:
             (df['Segment'].isin(segment_filter)) &
             (df['Gender'].isin(gender_filter))
         ]
-        tab1, tab2, tab3, tab4 = st.tabs(["📈 Overview", "📅 Trend Analysis", "👥 Customer Segments", "⚠️ Risk Analysis"])
+
+        #Tabs
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+            "📈 Overview",
+            "📅 Trend Analysis",
+            "👥 Customer Segments",
+            "⚠️ Risk Analysis",
+            "💰 Recovery Rate (MoM)",
+            "📊 DPD by Segment",
+            "📉 MoM % Change"
+        ])
 
         #Tab 1: Overview
         with tab1:
@@ -96,6 +106,33 @@ if uploaded_file is not None:
 
             fig_dpd = px.histogram(filtered_df, x='Days_Past_Due_Date', nbins=30, title="DPD Distribution")
             st.plotly_chart(fig_dpd, use_container_width=True)
+
+        #Tab 5: Recovery Rate MoM
+        with tab5:
+            st.subheader("Month-to-Month Recovery Rate")
+
+            recovery_df = filtered_df.groupby('Loan_Month_Year').agg({
+                'Sum_Loan_Amount_Disbursed': 'sum',
+                'Sum_Total_Recovered': 'sum'
+            }).reset_index()
+            recovery_df['Recovery_Rate_%'] = (recovery_df['Sum_Total_Recovered'] / recovery_df['Sum_Loan_Amount_Disbursed']) * 100
+
+            fig_recovery = px.line(recovery_df, x='Loan_Month_Year', y='Recovery_Rate_%', title="Recovery Rate Over Time (%)")
+            st.plotly_chart(fig_recovery, use_container_width=True)
+        with tab6:
+            st.subheader("DPD Distribution by Customer Segment")
+            fig_dpd_segment = px.box(filtered_df, x='Segment', y='Days_Past_Due_Date', points="all", title="Days Past Due by Segment")
+            st.plotly_chart(fig_dpd_segment, use_container_width=True)
+        with tab7:
+            st.subheader("Month-to-Month Percentage Change")
+
+            metrics = ['Setup_Fees', 'Sum_Total_Recovered']
+            mom_df = filtered_df.groupby('Loan_Month_Year')[metrics].sum().pct_change() * 100
+            mom_df = mom_df.reset_index()
+
+            for metric in metrics:
+                fig_metric = px.bar(mom_df, x='Loan_Month_Year', y=metric, title=f"MoM % Change: {metric}")
+                st.plotly_chart(fig_metric, use_container_width=True)
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
