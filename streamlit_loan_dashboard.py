@@ -10,15 +10,28 @@ uploaded_file = st.file_uploader("📤 Upload your Excel file", type=["xlsx"])
 
 if uploaded_file is not None:
     try:
+        # Load Excel
         df = pd.read_excel(uploaded_file, engine="openpyxl")
         df['actual_date_of_loan'] = pd.to_datetime(df['actual_date_of_loan'], errors='coerce')
         df['Loan_Month_Year'] = df['actual_date_of_loan'].dt.to_period('M').astype(str)
 
         # Sidebar filters
         st.sidebar.header("🔍 Filter Options")
-        loan_status_filter = st.sidebar.multiselect("Loan Status", options=df['Loan_Status'].dropna().unique(), default=list(df['Loan_Status'].dropna().unique()))
-        segment_filter = st.sidebar.multiselect("Segment", options=df['Segment'].dropna().unique(), default=list(df['Segment'].dropna().unique()))
-        gender_filter = st.sidebar.multiselect("Gender", options=df['Gender'].dropna().unique(), default=list(df['Gender'].dropna().unique()))
+        loan_status_filter = st.sidebar.multiselect(
+            "Loan Status",
+            options=df['Loan_Status'].dropna().unique(),
+            default=list(df['Loan_Status'].dropna().unique())
+        )
+        segment_filter = st.sidebar.multiselect(
+            "Segment",
+            options=df['Segment'].dropna().unique(),
+            default=list(df['Segment'].dropna().unique())
+        )
+        gender_filter = st.sidebar.multiselect(
+            "Gender",
+            options=df['Gender'].dropna().unique(),
+            default=list(df['Gender'].dropna().unique())
+        )
 
         filtered_df = df[
             (df['Loan_Status'].isin(loan_status_filter)) &
@@ -26,7 +39,7 @@ if uploaded_file is not None:
             (df['Gender'].isin(gender_filter))
         ]
 
-        #Tabs
+        # Tabs
         tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
             "📈 Overview",
             "📅 Trend Analysis",
@@ -37,7 +50,7 @@ if uploaded_file is not None:
             "📉 MoM % Change"
         ])
 
-        #Tab 1: Overview
+        # --- Tab 1: Overview ---
         with tab1:
             st.subheader("Loan Portfolio Overview")
 
@@ -52,9 +65,12 @@ if uploaded_file is not None:
             col3.metric("Outstanding", f"PKR {total_outstanding:,.0f}")
             col4.metric("Recovery Rate", f"{recovery_rate:.2f}%")
 
-            st.plotly_chart(px.pie(filtered_df, names='Account_State_Name', title='Account State Distribution'), use_container_width=True)
+            st.plotly_chart(
+                px.pie(filtered_df, names='Account_State_Name', title='Account State Distribution'),
+                use_container_width=True
+            )
 
-        #Tab 2: Trend Analysis
+        # --- Tab 2: Trend Analysis ---
         with tab2:
             st.subheader("Monthly Trends")
 
@@ -72,7 +88,7 @@ if uploaded_file is not None:
             st.plotly_chart(fig2, use_container_width=True)
             st.plotly_chart(fig3, use_container_width=True)
 
-        #Tab 3: Customer Segmentation
+        # --- Tab 3: Customer Segmentation ---
         with tab3:
             st.subheader("Customer Segmentation")
 
@@ -92,7 +108,7 @@ if uploaded_file is not None:
             st.plotly_chart(fig_gender, use_container_width=True)
             st.plotly_chart(fig_acct, use_container_width=True)
 
-        #Tab 4: Risk Analysis
+        # --- Tab 4: Risk Analysis ---
         with tab4:
             st.subheader("Loan Risk and Default Analysis")
 
@@ -107,7 +123,7 @@ if uploaded_file is not None:
             fig_dpd = px.histogram(filtered_df, x='Days_Past_Due_Date', nbins=30, title="DPD Distribution")
             st.plotly_chart(fig_dpd, use_container_width=True)
 
-        #Tab 5: Recovery Rate MoM
+        # --- Tab 5: Recovery Rate MoM ---
         with tab5:
             st.subheader("Month-to-Month Recovery Rate")
 
@@ -119,14 +135,21 @@ if uploaded_file is not None:
 
             fig_recovery = px.line(recovery_df, x='Loan_Month_Year', y='Recovery_Rate_%', title="Recovery Rate Over Time (%)")
             st.plotly_chart(fig_recovery, use_container_width=True)
+
+        # --- Tab 6: DPD by Segment ---
         with tab6:
             st.subheader("DPD Distribution by Customer Segment")
-            fig_dpd_segment = px.box(filtered_df, x='Segment', y='Days_Past_Due_Date', points="all", title="Days Past Due by Segment")
+            fig_dpd_segment = px.box(
+                filtered_df, x='Segment', y='Days_Past_Due_Date', points="all",
+                title="Days Past Due by Segment"
+            )
             st.plotly_chart(fig_dpd_segment, use_container_width=True)
+
+        # --- Tab 7: MoM % Change ---
         with tab7:
             st.subheader("Month-to-Month Percentage Change")
 
-            metrics = ['Setup_Fees', 'Sum_Total_Recovered']
+            metrics = ['Sum_Set_up_Fees', 'Sum_Total_Recovered']  # FIXED COLUMN NAME
             mom_df = filtered_df.groupby('Loan_Month_Year')[metrics].sum().pct_change() * 100
             mom_df = mom_df.reset_index()
 
