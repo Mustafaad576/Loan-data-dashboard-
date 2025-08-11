@@ -4,7 +4,7 @@ import plotly.express as px
 import re
 
 st.set_page_config(page_title="Microfinance Loan Dashboard (Fixed)", layout="wide")
-st.title("📊 Microfinance Loan Analysis Dashboard — Fixed & Robust")
+st.title("📊 Microfinance Loan Analysis Dashboard")
 st.markdown("Upload your loan dataset (.xlsx). The app will try to automatically detect column names and avoid errors.")
 
 def normalize(col_name: str) -> str:
