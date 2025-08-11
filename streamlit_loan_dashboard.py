@@ -264,5 +264,3 @@ with tab_mom:
         fig_mom = px.line(mom, x='Loan_Month_Year', y=metric + '_mom_pct', markers=True, title=f"MoM % Change: {metric}")
         st.plotly_chart(fig_mom, use_container_width=True)
 
-st.markdown("---")
-st.markdown("If you still see 'column missing' errors, please reply with the exact error message and I will update the detection logic to include that column variant.")
